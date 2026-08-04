@@ -1,0 +1,69 @@
+// Payment Hub — Prisma schema
+// Run `npx prisma migrate dev` locally, or `npx prisma migrate deploy` on Railway.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// One row per website you own (10 rows for your 10 sites).
+model Merchant {
+  id          String   @id @default(uuid())
+  name        String // e.g. "shop-a.com"
+  apiKey      String   @unique @map("api_key")
+  apiSecret   String   @map("api_secret") // used to HMAC-sign requests & verify site->hub calls
+  webhookUrl  String   @map("webhook_url") // hub calls this on the merchant site when a payment completes
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  transactions Transaction[]
+
+  @@map("merchants")
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  ABANDONED
+}
+
+// One row per payment attempt, tied back to the merchant site that requested it.
+model Transaction {
+  id                String             @id @default(uuid())
+  reference         String             @unique // reference the hub gives Paystack & the merchant site
+  merchantId        String             @map("merchant_id")
+  merchant          Merchant           @relation(fields: [merchantId], references: [id])
+  amountKobo        BigInt             @map("amount_kobo") // Paystack works in kobo (or cents)
+  currency           String            @default("NGN")
+  email             String
+  status            TransactionStatus  @default(PENDING)
+  paystackAccessCode String?           @map("paystack_access_code")
+  authorizationUrl  String?            @map("authorization_url")
+  redirectUrl       String?            @map("redirect_url") // where the hub sends the browser back to on that specific merchant site, after payment
+  metadata          Json?
+  merchantNotified  Boolean            @default(false) @map("merchant_notified")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@index([merchantId])
+  @@index([status])
+  @@map("transactions")
+}
+
+// Audit log of raw Paystack webhook events (helps with debugging & replay safety).
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  eventType   String   @map("event_type")
+  reference   String?
+  rawPayload  Json     @map("raw_payload")
+  processed   Boolean  @default(false)
+  receivedAt  DateTime @default(now()) @map("received_at")
+
+  @@map("webhook_events")
+}

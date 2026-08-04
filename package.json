@@ -1,0 +1,33 @@
+{
+  "name": "payment-hub",
+  "version": "1.0.0",
+  "description": "Central payment hub — the only service that talks to Paystack. Your 10 sites talk to this hub's own API instead.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "seed:merchant": "node src/scripts/createMerchant.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.20.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
