@@ -1,11 +1,23 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const prisma = require('../config/prisma');
 const merchantAuth = require('../middleware/merchantAuth');
 const paystack = require('../services/paystack');
+const { getHubPublicUrl, assertValidRedirectUrl } = require('../utils/publicUrl');
 
 const router = express.Router();
 router.use(merchantAuth);
+
+// Generates a 6-digit numeric reference (e.g. "482913") and makes sure it isn't
+// already in use. This is what shows up on receipts, Paystack's dashboard, and
+// merchant sites — short and easy to read/quote over support chats.
+async function generateReference() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = String(Math.floor(100000 + Math.random() * 900000));
+    const existing = await prisma.transaction.findUnique({ where: { reference: candidate } });
+    if (!existing) return candidate;
+  }
+  throw new Error('Could not generate a unique reference, please retry.');
+}
 
 // POST /api/v1/transaction/initialize
 // Body: { email, amount (in NAIRA, not kobo), currency?, metadata? }
@@ -26,15 +38,21 @@ router.post('/initialize', async (req, res, next) => {
       });
     }
 
+    try {
+      assertValidRedirectUrl(redirectUrl);
+    } catch (validationErr) {
+      return res.status(400).json({ status: false, message: validationErr.message });
+    }
+
     const amountKobo = Math.round(Number(amount) * 100);
     if (!Number.isFinite(amountKobo) || amountKobo <= 0) {
       return res.status(400).json({ status: false, message: 'amount must be a positive number' });
     }
 
-    // Reference is namespaced per merchant so 10 sites can never collide with each other.
-    const reference = `${req.merchant.name.replace(/[^a-zA-Z0-9]/g, '')}_${uuidv4()}`;
+    // 6-digit numeric reference, unique across the whole hub (checked against the DB).
+    const reference = await generateReference();
 
-    const callbackUrl = `${process.env.HUB_PUBLIC_URL || ''}/api/v1/transaction/return/${reference}`;
+    const callbackUrl = `${getHubPublicUrl()}/api/v1/transaction/return/${reference}`;
 
     const paystackResp = await paystack.initializeTransaction({
       email,

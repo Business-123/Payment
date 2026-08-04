@@ -10,6 +10,11 @@ const adminRoutes = require('./routes/admin');
 const transactionRoutes = require('./routes/transaction');
 const transactionReturnRoutes = require('./routes/transactionReturn');
 const paystackWebhookRoutes = require('./routes/paystackWebhook');
+const { getHubPublicUrl } = require('./utils/publicUrl');
+
+// Fail fast and loudly at boot if HUB_PUBLIC_URL is missing/malformed, rather than
+// silently sending Paystack a broken callback_url on every single payment attempt.
+getHubPublicUrl();
 
 const app = express();
 
