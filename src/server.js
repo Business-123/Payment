@@ -13,6 +13,11 @@ const paystackWebhookRoutes = require('./routes/paystackWebhook');
 
 const app = express();
 
+// Railway (and most PaaS) sit behind a reverse proxy that sets X-Forwarded-For.
+// Without this, express-rate-limit can't safely determine the real client IP.
+app.set('trust proxy', 1);
+
+
 // CSP disabled because the dashboard is a single self-contained HTML file with an
 // inline <script>; helmet's default CSP blocks inline scripts. Other helmet
 // protections (X-Frame-Options, etc.) stay on. The dashboard itself is still gated
