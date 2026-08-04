@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -12,7 +13,12 @@ const paystackWebhookRoutes = require('./routes/paystackWebhook');
 
 const app = express();
 
-app.use(helmet());
+// CSP disabled because the dashboard is a single self-contained HTML file with an
+// inline <script>; helmet's default CSP blocks inline scripts. Other helmet
+// protections (X-Frame-Options, etc.) stay on. The dashboard itself is still gated
+// by the admin key, and every write it makes goes through the same authenticated
+// /admin/* endpoints as the CLI script.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -44,6 +50,11 @@ app.use(
 );
 
 app.get('/health', (req, res) => res.json({ status: true, message: 'Payment hub is running' }));
+
+// Admin dashboard UI — visit https://<your-hub>/dashboard to generate/manage API keys
+// for your 10 sites without touching curl or Postman. It only calls the same
+// authenticated /admin/* endpoints below, using the admin key you type into it.
+app.use('/dashboard', express.static(path.join(__dirname, '../public/admin')));
 
 app.use('/admin', adminRoutes);
 // Public browser-redirect route — mounted BEFORE the signature-authenticated router

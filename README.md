@@ -28,6 +28,12 @@ Site 10─┘            ▲
 
 ## 2. Register your 10 websites
 
+### Option A — Admin dashboard (easiest)
+
+Visit `https://<your-hub>.up.railway.app/dashboard`, enter your `ADMIN_API_KEY`, and use the form to connect each site. The API key + secret are shown once in a popup — copy them into that site's environment immediately.
+
+### Option B — CLI script
+
 Run this once per site (locally or via Railway's shell):
 
 ```bash

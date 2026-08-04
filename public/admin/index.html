@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payment Hub — Admin</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #131a24;
+    --panel-border: #22303f;
+    --text: #e6edf3;
+    --text-dim: #8b98a5;
+    --accent: #d4a340;
+    --accent-dim: #a17f34;
+    --success: #3fb950;
+    --danger: #e5534b;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  .topbar {
+    border-bottom: 1px solid var(--panel-border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .brand .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+
+  .brand small {
+    color: var(--text-dim);
+    font-weight: 400;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ---- Gate screen ---- */
+  #gate {
+    max-width: 420px;
+    margin: 120px auto 0;
+    text-align: center;
+  }
+  #gate h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  #gate p {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  input, select {
+    width: 100%;
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 11px 13px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: var(--mono);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent-dim);
+  }
+  input::placeholder { color: #4a5568; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-family: var(--sans);
+  }
+
+  .field { margin-bottom: 16px; }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--sans);
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.88; }
+  button:active { opacity: 0.75; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #1a1305;
+    width: 100%;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+  }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid #4a2323;
+    color: var(--danger);
+  }
+
+  .btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  #error-msg {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  /* ---- Dashboard ---- */
+  #dashboard { display: none; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-head h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .section-head .count {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .site-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .site-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .site-row:last-child { border-bottom: none; }
+
+  .site-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .site-meta {
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--mono);
+    margin-top: 3px;
+    word-break: break-all;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-active { background: rgba(63,185,80,0.12); color: var(--success); border: 1px solid rgba(63,185,80,0.3); }
+  .badge-inactive { background: rgba(229,83,75,0.1); color: var(--danger); border: 1px solid rgba(229,83,75,0.3); }
+
+  .key-mono {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  /* ---- Modal (one-time secret reveal) ---- */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--accent-dim);
+    border-radius: 10px;
+    max-width: 480px;
+    width: 100%;
+    padding: 28px;
+  }
+  .modal h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+  .modal .warn {
+    color: var(--accent);
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+  .credential {
+    margin-bottom: 14px;
+  }
+  .credential label {
+    margin-bottom: 4px;
+  }
+  .credential-value {
+    display: flex;
+    gap: 8px;
+  }
+  .credential-value input {
+    flex: 1;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  code.inline {
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>Payment Hub</h1>
+  <p>Enter your admin key to manage connected sites</p>
+  <div class="field">
+    <input type="password" id="admin-key-input" placeholder="Admin key" autocomplete="off" />
+  </div>
+  <button class="btn-primary" onclick="unlock()">Unlock</button>
+  <div id="error-msg"></div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Payment Hub <small id="hub-url-label"></small></div>
+    <button class="btn-secondary btn-small" onclick="lock()">Lock</button>
+  </div>
+
+  <main>
+    <div class="panel">
+      <p class="panel-title">Connect a new site</p>
+      <div class="row2">
+        <div class="field">
+          <label>Site name</label>
+          <input type="text" id="new-name" placeholder="site1.com" />
+        </div>
+        <div class="field">
+          <label>Webhook URL (on that site)</label>
+          <input type="text" id="new-webhook" placeholder="https://site1.com/webhooks/hub" />
+        </div>
+      </div>
+      <button class="btn-primary" style="width:auto;" onclick="createMerchant()">Generate API key</button>
+      <div id="create-error" style="color:var(--danger); font-size:13px; margin-top:10px; display:none;"></div>
+    </div>
+
+    <div class="section-head">
+      <h2>Connected sites</h2>
+      <span class="count" id="site-count">0</span>
+    </div>
+    <div class="panel" style="padding: 8px 24px;">
+      <div id="site-list" class="site-list"></div>
+      <div id="empty-state" class="empty-state" style="display:none;">No sites connected yet — add one above.</div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3 id="modal-title">Site connected</h3>
+    <p class="warn">⚠ The secret below is shown once. Copy both values into that site's environment now.</p>
+    <div class="credential">
+      <label>API Key <code class="inline">HUB_API_KEY</code></label>
+      <div class="credential-value">
+        <input type="text" id="modal-key" readonly />
+        <button class="btn-secondary btn-small" onclick="copyField('modal-key')">Copy</button>
+      </div>
+    </div>
+    <div class="credential">
+      <label>API Secret <code class="inline">HUB_API_SECRET</code></label>
+      <div class="credential-value">
+        <input type="text" id="modal-secret" readonly />
+        <button class="btn-secondary btn-small" onclick="copyField('modal-secret')">Copy</button>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top: 8px;" onclick="closeModal()">Done — I've saved these</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const HUB_URL = window.location.origin;
+  document.getElementById('hub-url-label').textContent = HUB_URL.replace(/^https?:\/\//, '');
+
+  function getAdminKey() { return sessionStorage.getItem('hub_admin_key'); }
+
+  async function unlock() {
+    const key = document.getElementById('admin-key-input').value.trim();
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+    if (!key) return;
+
+    // Validate the key by attempting to list merchants.
+    try {
+      const res = await fetch(`${HUB_URL}/admin/merchants`, { headers: { 'x-admin-key': key } });
+      if (!res.ok) throw new Error('Invalid admin key');
+      sessionStorage.setItem('hub_admin_key', key);
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadMerchants();
+    } catch (e) {
+      errEl.textContent = 'Invalid admin key, or the hub is unreachable.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  function lock() {
+    sessionStorage.removeItem('hub_admin_key');
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('gate').style.display = 'block';
+    document.getElementById('admin-key-input').value = '';
+  }
+
+  async function loadMerchants() {
+    const key = getAdminKey();
+    const res = await fetch(`${HUB_URL}/admin/merchants`, { headers: { 'x-admin-key': key } });
+    if (!res.ok) { lock(); return; }
+    const { data } = await res.json();
+
+    const list = document.getElementById('site-list');
+    const empty = document.getElementById('empty-state');
+    document.getElementById('site-count').textContent = data.length;
+
+    if (data.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = data.map(m => `
+      <div class="site-row">
+        <div>
+          <div class="site-name">${escapeHtml(m.name)}</div>
+          <div class="site-meta">${escapeHtml(m.webhookUrl)}</div>
+        </div>
+        <div class="key-mono">${escapeHtml(m.apiKey)}</div>
+        <span class="badge ${m.isActive ? 'badge-active' : 'badge-inactive'}">${m.isActive ? 'active' : 'inactive'}</span>
+        <button class="${m.isActive ? 'btn-danger' : 'btn-secondary'} btn-small" onclick="toggleMerchant('${m.id}')">
+          ${m.isActive ? 'Deactivate' : 'Activate'}
+        </button>
+      </div>
+    `).join('');
+  }
+
+  async function createMerchant() {
+    const name = document.getElementById('new-name').value.trim();
+    const webhookUrl = document.getElementById('new-webhook').value.trim();
+    const errEl = document.getElementById('create-error');
+    errEl.style.display = 'none';
+
+    if (!name || !webhookUrl) {
+      errEl.textContent = 'Both fields are required.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${HUB_URL}/admin/merchants`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+        body: JSON.stringify({ name, webhookUrl }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to create site');
+
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-webhook').value = '';
+
+      document.getElementById('modal-title').textContent = `${name} connected`;
+      document.getElementById('modal-key').value = json.data.apiKey;
+      document.getElementById('modal-secret').value = json.data.apiSecret;
+      document.getElementById('modal-backdrop').style.display = 'flex';
+
+      loadMerchants();
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function toggleMerchant(id) {
+    await fetch(`${HUB_URL}/admin/merchants/${id}/toggle`, {
+      method: 'PATCH',
+      headers: { 'x-admin-key': getAdminKey() },
+    });
+    loadMerchants();
+  }
+
+  function closeModal() {
+    document.getElementById('modal-backdrop').style.display = 'none';
+    document.getElementById('modal-key').value = '';
+    document.getElementById('modal-secret').value = '';
+  }
+
+  function copyField(id) {
+    const el = document.getElementById(id);
+    el.select();
+    navigator.clipboard.writeText(el.value);
+    showToast('Copied to clipboard');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Auto-unlock if key already saved this session.
+  if (getAdminKey()) {
+    document.getElementById('admin-key-input').value = getAdminKey();
+    unlock();
+  }
+</script>
+
+</body>
+</html>
