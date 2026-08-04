@@ -21,7 +21,7 @@ CREATE TABLE "transactions" (
     "reference" TEXT NOT NULL,
     "merchant_id" TEXT NOT NULL,
     "amount_kobo" BIGINT NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'NGN',
+    "currency" TEXT NOT NULL DEFAULT 'GHS',
     "email" TEXT NOT NULL,
     "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
     "paystack_access_code" TEXT,

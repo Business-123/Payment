@@ -13,7 +13,7 @@ router.use(merchantAuth);
 // Paystack on your site's behalf and returns a checkout URL to redirect the customer to.
 router.post('/initialize', async (req, res, next) => {
   try {
-    const { email, amount, currency = 'NGN', metadata, redirectUrl } = req.body;
+    const { email, amount, currency = 'GHS', metadata, redirectUrl } = req.body;
 
     if (!email || !amount) {
       return res.status(400).json({ status: false, message: 'email and amount are required' });

@@ -58,7 +58,7 @@ Body:
   {
     "email": "customer@example.com",
     "amount": 5000,
-    "currency": "NGN",
+    "currency": "GHS",
     "redirectUrl": "https://site1.com/order/123/thank-you",
     "metadata": { "orderId": "123" }
   }

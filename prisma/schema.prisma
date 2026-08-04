@@ -40,7 +40,7 @@ model Transaction {
   merchantId        String             @map("merchant_id")
   merchant          Merchant           @relation(fields: [merchantId], references: [id])
   amountKobo        BigInt             @map("amount_kobo") // Paystack works in kobo (or cents)
-  currency           String            @default("NGN")
+  currency           String            @default("GHS")
   email             String
   status            TransactionStatus  @default(PENDING)
   paystackAccessCode String?           @map("paystack_access_code")
