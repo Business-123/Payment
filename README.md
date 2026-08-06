@@ -15,7 +15,7 @@ Site 10─┘            ▲
 1. Push this repo to GitHub, connect it in Railway.
 2. Add a **Volume** to this service (Railway dashboard → your service → Settings → Volumes), and set its mount path to `/data`. No Postgres plugin needed — the database is a single SQLite file that lives on this volume, so it survives restarts/redeploys.
 3. Set these environment variables in Railway:
-   - `DATABASE_URL` — `file:/data/hub.db` (must match the volume's mount path from step 2)
+   - `DATABASE_URL` — `file:/data/hub.db` (must match the volume's mount path from step 2 — note the required `file:` prefix; `/data/hub.db` alone will fail)
    - `PAYSTACK_SECRET_KEY` (from your Paystack dashboard, live or test)
    - `PAYSTACK_PUBLIC_KEY`
    - `ADMIN_API_KEY` — generate with `openssl rand -hex 32`, keep it private to you
@@ -32,6 +32,8 @@ Site 10─┘            ▲
 This trades Postgres for a zero-cost SQLite file on a Railway Volume, which is plenty for a hub fronting 10 sites. Two things to know:
 - **Single instance only.** A Railway Volume attaches to one running instance, so don't scale this service to multiple replicas — SQLite isn't built for concurrent writers across instances anyway.
 - **Back it up.** There's no automatic point-in-time recovery like a managed Postgres plugin gives you. Periodically download `hub.db` (e.g. via a Railway shell / `railway run`) if you want restore points.
+
+Startup runs through `scripts/entrypoint.sh` rather than calling Prisma directly. It checks `DATABASE_URL` is set and auto-prepends `file:` if you forget it in Railway's Variables tab, so a typo there degrades to a warning in the logs instead of a crash loop.
 
 ## 2. Register your 10 websites
 
