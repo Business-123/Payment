@@ -1,7 +1,15 @@
 #!/bin/sh
-# Runs before Prisma/the server start. Prisma's CLI reads DATABASE_URL straight out
-# of the environment when it validates prisma/schema.prisma — before any of our own
-# JS runs — so a malformed value has to be caught and fixed right here, not in code.
+# Runs before the server starts. Prisma's CLI reads DATABASE_URL straight out of the
+# environment when it validates prisma/schema.prisma — before any of our own JS runs —
+# so a malformed value has to be caught and fixed right here, not in code.
+#
+# We use `prisma db push` rather than `prisma migrate deploy` on purpose: this is a
+# single SQLite file on one Railway volume, not a multi-environment Postgres setup, so
+# there's no real need for migration-history bookkeeping — and that bookkeeping is
+# exactly what caused the last failure (a stale migration file failed once, Prisma
+# recorded it as failed in the db, and every subsequent deploy refused to proceed
+# until that history was manually fixed). `db push` just diffs schema.prisma against
+# the current file and applies the difference — no history table, nothing to get stuck.
 set -e
 
 if [ -z "$DATABASE_URL" ]; then
@@ -22,5 +30,5 @@ case "$DATABASE_URL" in
     ;;
 esac
 
-npx prisma migrate deploy
+npx prisma db push --skip-generate --accept-data-loss
 exec node src/server.js

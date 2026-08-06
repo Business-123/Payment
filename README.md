@@ -21,7 +21,7 @@ Site 10─┘            ▲
    - `ADMIN_API_KEY` — generate with `openssl rand -hex 32`, keep it private to you
    - `ALLOWED_ORIGINS` — comma-separated list of your 10 site domains (only needed if calling from browser JS)
    - `HUB_PUBLIC_URL` — the Railway-assigned public URL of this service
-4. Railway will run `npx prisma migrate deploy && npm start` automatically (see `railway.json`) — this creates `hub.db` on the volume the first time it deploys.
+4. Railway runs `scripts/entrypoint.sh` automatically (see `railway.json`), which syncs the schema with `prisma db push` and creates `hub.db` on the volume the first time it deploys.
 5. In the Paystack Dashboard → Settings → API Keys & Webhooks, set the webhook URL to:
    ```
    https://<your-hub>.up.railway.app/webhook/paystack
@@ -33,7 +33,7 @@ This trades Postgres for a zero-cost SQLite file on a Railway Volume, which is p
 - **Single instance only.** A Railway Volume attaches to one running instance, so don't scale this service to multiple replicas — SQLite isn't built for concurrent writers across instances anyway.
 - **Back it up.** There's no automatic point-in-time recovery like a managed Postgres plugin gives you. Periodically download `hub.db` (e.g. via a Railway shell / `railway run`) if you want restore points.
 
-Startup runs through `scripts/entrypoint.sh` rather than calling Prisma directly. It checks `DATABASE_URL` is set and auto-prepends `file:` if you forget it in Railway's Variables tab, so a typo there degrades to a warning in the logs instead of a crash loop.
+Startup runs through `scripts/entrypoint.sh` rather than calling Prisma directly. It checks `DATABASE_URL` is set and auto-prepends `file:` if you forget it in Railway's Variables tab, then runs `prisma db push` to sync the schema — no separate `prisma/migrations` folder to keep in sync or get stuck on a failed step.
 
 ## 2. Register your 10 websites
 
@@ -117,9 +117,9 @@ if (expected !== req.headers['x-hub-signature']) reject();
 ## 4. Local development
 
 ```bash
-cp .env.example .env   # fill in real values
+cp .env.example .env   # fill in real values, DATABASE_URL can point at a local file e.g. file:./dev.db
 npm install
-npx prisma migrate dev --name init
+npx prisma db push
 npm run dev
 ```
 

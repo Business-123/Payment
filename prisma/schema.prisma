@@ -1,9 +1,14 @@
 // Payment Hub — Prisma schema
-// Run `npx prisma migrate dev` locally, or `npx prisma migrate deploy` on Railway.
+// Local dev: `npx prisma db push` to sync the schema to a local SQLite file.
+// Production: handled automatically by scripts/entrypoint.sh on deploy.
 //
 // Storage: SQLite file on a Railway Volume — no Postgres plugin/database needed.
 // DATABASE_URL must point at a file path inside the mounted volume, e.g.
 // "file:/data/hub.db" with the volume mounted at /data. See .env.example and README.
+//
+// Uses `db push` instead of `prisma migrate` — this is a single file on one volume,
+// not a multi-environment Postgres setup, so there's no migrations/ folder here.
+// `db push` just syncs this schema straight to the file on every deploy.
 
 generator client {
   provider = "prisma-client-js"
