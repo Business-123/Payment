@@ -77,7 +77,7 @@ router.post('/initialize', async (req, res, next) => {
         paystackAccessCode: paystackResp.data.access_code,
         authorizationUrl: paystackResp.data.authorization_url,
         redirectUrl,
-        metadata: metadata || {},
+        metadata: JSON.stringify(metadata || {}),
       },
     });
 

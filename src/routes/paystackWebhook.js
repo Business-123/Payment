@@ -24,7 +24,7 @@ router.post('/', async (req, res, next) => {
     const event = req.body;
 
     await prisma.webhookEvent.create({
-      data: { eventType: event.event, reference: event?.data?.reference, rawPayload: event },
+      data: { eventType: event.event, reference: event?.data?.reference, rawPayload: JSON.stringify(event) },
     });
 
     if (event.event !== 'charge.success') return; // only care about successful charges here
@@ -49,7 +49,9 @@ router.post('/', async (req, res, next) => {
       amount: Number(txn.amountKobo) / 100,
       currency: txn.currency,
       email: txn.email,
-      metadata: txn.metadata,
+      // metadata is stored as a JSON string (SQLite has no native Json type) — parse
+      // it back to an object so merchant sites receive the same shape they sent in.
+      metadata: txn.metadata ? JSON.parse(txn.metadata) : {},
     };
     const body = JSON.stringify(payload);
     const sig = computeSignature(txn.merchant.apiSecret, body);

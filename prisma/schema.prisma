@@ -39,6 +39,10 @@ model Merchant {
 // instead of a TransactionStatus enum. The app only ever writes one of:
 // PENDING | SUCCESS | FAILED | ABANDONED — keep any new status values in sync
 // across transaction.js, transactionReturn.js, and paystackWebhook.js.
+//
+// SQLite's Prisma connector also has no native Json type, so `metadata` below is a
+// String, not Json — the app JSON.stringify's on write and JSON.parse's on read
+// (see transaction.js and paystackWebhook.js). Same story for WebhookEvent.rawPayload.
 
 // One row per payment attempt, tied back to the merchant site that requested it.
 model Transaction {
@@ -53,7 +57,7 @@ model Transaction {
   paystackAccessCode String?  @map("paystack_access_code")
   authorizationUrl  String?  @map("authorization_url")
   redirectUrl       String?  @map("redirect_url") // where the hub sends the browser back to on that specific merchant site, after payment
-  metadata          Json?
+  metadata          String?  // JSON-encoded string — see note above
   merchantNotified  Boolean  @default(false) @map("merchant_notified")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -68,7 +72,7 @@ model WebhookEvent {
   id          String   @id @default(uuid())
   eventType   String   @map("event_type")
   reference   String?
-  rawPayload  Json     @map("raw_payload")
+  rawPayload  String   @map("raw_payload") // JSON-encoded string — see note on Transaction.metadata above
   processed   Boolean  @default(false)
   receivedAt  DateTime @default(now()) @map("received_at")
 
