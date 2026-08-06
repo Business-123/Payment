@@ -30,7 +30,7 @@ Site 10─┘            ▲
 
 ### Option A — Admin dashboard (easiest)
 
-Visit `https://<your-hub>.up.railway.app/dashboard`, enter your `ADMIN_API_KEY`, and use the form to connect each site. The API key + secret are shown once in a popup — copy them into that site's environment immediately.
+Visit `https://<your-hub>.up.railway.app/1234567890`, enter your `ADMIN_API_KEY`, and use the form to connect each site. The API key + secret are shown once in a popup — copy them into that site's environment immediately.
 
 ### Option B — CLI script
 

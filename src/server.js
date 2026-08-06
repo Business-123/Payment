@@ -61,10 +61,19 @@ app.use(
 
 app.get('/health', (req, res) => res.json({ status: true, message: 'Payment hub is running' }));
 
-// Admin dashboard UI — visit https://<your-hub>/dashboard to generate/manage API keys
+// Public-facing landing page (DataLix). This is a plain static site — it makes no
+// calls into the hub's API or database, and has no knowledge of merchants, keys,
+// or transactions. It's served here purely so the hub's root URL shows something
+// other than a 404; it is not part of the payment/admin system in any way.
+app.use('/', express.static(path.join(__dirname, '../public/site')));
+
+// Admin dashboard UI — visit https://<your-hub>/1234567890 to generate/manage API keys
 // for your 10 sites without touching curl or Postman. It only calls the same
 // authenticated /admin/* endpoints below, using the admin key you type into it.
-app.use('/dashboard', express.static(path.join(__dirname, '../public/admin')));
+// Note: this path is only "security by obscurity" — the real protection is still the
+// x-admin-key check on every /admin/* request. Anyone who guesses/finds this path
+// still can't do anything without the admin key.
+app.use('/1234567890', express.static(path.join(__dirname, '../public/admin')));
 
 app.use('/admin', adminRoutes);
 // Public browser-redirect route — mounted BEFORE the signature-authenticated router

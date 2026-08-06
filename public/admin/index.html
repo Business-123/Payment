@@ -365,7 +365,7 @@
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <h3 id="modal-title">Site connected</h3>
-    <p class="warn">⚠ The secret below is shown once. Copy both values into that site's environment now.</p>
+    <p class="warn" id="modal-warn">⚠ The secret below is shown once. Copy both values into that site's environment now.</p>
     <div class="credential">
       <label>API Key <code class="inline">HUB_API_KEY</code></label>
       <div class="credential-value">
@@ -444,9 +444,13 @@
         </div>
         <div class="key-mono">${escapeHtml(m.apiKey)}</div>
         <span class="badge ${m.isActive ? 'badge-active' : 'badge-inactive'}">${m.isActive ? 'active' : 'inactive'}</span>
-        <button class="${m.isActive ? 'btn-danger' : 'btn-secondary'} btn-small" onclick="toggleMerchant('${m.id}')">
-          ${m.isActive ? 'Deactivate' : 'Activate'}
-        </button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-secondary btn-small" onclick="viewMerchant('${m.id}')">View</button>
+          <button class="${m.isActive ? 'btn-danger' : 'btn-secondary'} btn-small" onclick="toggleMerchant('${m.id}')">
+            ${m.isActive ? 'Deactivate' : 'Activate'}
+          </button>
+          <button class="btn-danger btn-small" onclick="deleteMerchant('${m.id}', '${escapeHtml(m.name).replace(/'/g, "\\'")}')">Delete</button>
+        </div>
       </div>
     `).join('');
   }
@@ -476,6 +480,7 @@
       document.getElementById('new-webhook').value = '';
 
       document.getElementById('modal-title').textContent = `${name} connected`;
+      document.getElementById('modal-warn').textContent = "⚠ The secret below is shown once. Copy both values into that site's environment now.";
       document.getElementById('modal-key').value = json.data.apiKey;
       document.getElementById('modal-secret').value = json.data.apiSecret;
       document.getElementById('modal-backdrop').style.display = 'flex';
@@ -493,6 +498,43 @@
       headers: { 'x-admin-key': getAdminKey() },
     });
     loadMerchants();
+  }
+
+  // Re-reveal an already-generated key/secret pair for a site you've already connected.
+  async function viewMerchant(id) {
+    try {
+      const res = await fetch(`${HUB_URL}/admin/merchants/${id}`, {
+        headers: { 'x-admin-key': getAdminKey() },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to load site');
+
+      document.getElementById('modal-title').textContent = `${json.data.name}`;
+      document.getElementById('modal-warn').textContent = 'Existing credentials for this site. Keep them private.';
+      document.getElementById('modal-key').value = json.data.apiKey;
+      document.getElementById('modal-secret').value = json.data.apiSecret;
+      document.getElementById('modal-backdrop').style.display = 'flex';
+    } catch (e) {
+      showToast(e.message);
+    }
+  }
+
+  async function deleteMerchant(id, name) {
+    if (!confirm(`Delete "${name}"? This permanently removes its API key/secret. This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`${HUB_URL}/admin/merchants/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': getAdminKey() },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to delete site');
+      showToast(json.message || 'Deleted');
+      loadMerchants();
+    } catch (e) {
+      showToast(e.message);
+    }
   }
 
   function closeModal() {
