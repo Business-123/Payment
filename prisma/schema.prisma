@@ -1,12 +1,16 @@
 // Payment Hub — Prisma schema
 // Run `npx prisma migrate dev` locally, or `npx prisma migrate deploy` on Railway.
+//
+// Storage: SQLite file on a Railway Volume — no Postgres plugin/database needed.
+// DATABASE_URL must point at a file path inside the mounted volume, e.g.
+// "file:/data/hub.db" with the volume mounted at /data. See .env.example and README.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -26,30 +30,28 @@ model Merchant {
   @@map("merchants")
 }
 
-enum TransactionStatus {
-  PENDING
-  SUCCESS
-  FAILED
-  ABANDONED
-}
+// SQLite has no native enum support in Prisma, so status is a plain String column
+// instead of a TransactionStatus enum. The app only ever writes one of:
+// PENDING | SUCCESS | FAILED | ABANDONED — keep any new status values in sync
+// across transaction.js, transactionReturn.js, and paystackWebhook.js.
 
 // One row per payment attempt, tied back to the merchant site that requested it.
 model Transaction {
-  id                String             @id @default(uuid())
-  reference         String             @unique // reference the hub gives Paystack & the merchant site
-  merchantId        String             @map("merchant_id")
-  merchant          Merchant           @relation(fields: [merchantId], references: [id])
-  amountKobo        BigInt             @map("amount_kobo") // Paystack works in kobo (or cents)
-  currency           String            @default("GHS")
+  id                String   @id @default(uuid())
+  reference         String   @unique // reference the hub gives Paystack & the merchant site
+  merchantId        String   @map("merchant_id")
+  merchant          Merchant @relation(fields: [merchantId], references: [id])
+  amountKobo        BigInt   @map("amount_kobo") // Paystack works in kobo (or cents)
+  currency          String   @default("GHS")
   email             String
-  status            TransactionStatus  @default(PENDING)
-  paystackAccessCode String?           @map("paystack_access_code")
-  authorizationUrl  String?            @map("authorization_url")
-  redirectUrl       String?            @map("redirect_url") // where the hub sends the browser back to on that specific merchant site, after payment
+  status            String   @default("PENDING")
+  paystackAccessCode String?  @map("paystack_access_code")
+  authorizationUrl  String?  @map("authorization_url")
+  redirectUrl       String?  @map("redirect_url") // where the hub sends the browser back to on that specific merchant site, after payment
   metadata          Json?
-  merchantNotified  Boolean            @default(false) @map("merchant_notified")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  merchantNotified  Boolean  @default(false) @map("merchant_notified")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@index([merchantId])
   @@index([status])
